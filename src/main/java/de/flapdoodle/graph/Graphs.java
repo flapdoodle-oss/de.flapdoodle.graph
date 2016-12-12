@@ -16,25 +16,70 @@
  */
 package de.flapdoodle.graph;
 
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+
+import org.jgrapht.DirectedGraph;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
-import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.builder.AbstractGraphBuilder;
+import org.jgrapht.graph.builder.DirectedGraphBuilder;
 
 public class Graphs {
 
-	public static <T> Builder<T,DefaultEdge,DefaultDirectedGraph<T,DefaultEdge>> directedGraph() {
-		return new Builder<>(new DefaultDirectedGraph<>(DefaultEdge.class));
+	public static <T> WithIterable<T> with(Iterable<T> src) {
+		return new WithIterable<>(src);
 	}
 	
-	public static class Builder<V,E,T extends Graph<V, E>> {
+	public static <V,E> DirectedGraph<V, E> filter(DirectedGraph<V, E> src, Predicate<V> filter) {
+		DefaultDirectedGraph<V, E> ret = new DefaultDirectedGraph<>(src.getEdgeFactory());
 		
-		private final T graph;
+		src.vertexSet().forEach(v -> {
+			if (filter.test(v)) {
+				ret.addVertex(v);
+				
+				src.outgoingEdgesOf(v);
+			}
+		});
+		
+		return ret;
+	}
+	
 
-		public Builder(T graph) {
-			this.graph = graph;
+	public static class WithIterable<T> {
+		
+		private final Iterable<T> src;
+
+		public WithIterable(Iterable<T> src) {
+			this.src = src;
 		}
+		
+		public <V, E, G extends Graph<V, E>, B extends AbstractGraphBuilder<V, E, G, B>> AndGraphBuilder<T,V,E,G,B> graphBuilder(Supplier<B> graphSupplier) {
+			return new AndGraphBuilder<T,V,E,G,B>(src,graphSupplier);
+		}
+	}
+	
+	public static class AndGraphBuilder<T, V, E, G extends Graph<V, E>, B extends AbstractGraphBuilder<V, E, G, B>> {
 
+		private final Iterable<T> src;
+		private final Supplier<B> graphSupplier;
+
+		public AndGraphBuilder(Iterable<T> src, Supplier<B> graphSupplier) {
+			this.src = src;
+			this.graphSupplier = graphSupplier;
+		}
 		
-		
+		public G build(BiConsumer<? super B, T> forEach) {
+			B ret = graphSupplier.get();
+			
+			src.forEach(t -> forEach.accept(ret, t));
+			
+			return ret.build();
+		}
+	}
+	
+	public static <V, E> Supplier<DirectedGraphBuilder<V, E, DefaultDirectedGraph<V, E>>> directedGraphBuilder(Class<? extends E> edgeClass) {
+		return () -> new DirectedGraphBuilder<V,E,DefaultDirectedGraph<V, E>>(new DefaultDirectedGraph<V,E>(edgeClass));
 	}
 }

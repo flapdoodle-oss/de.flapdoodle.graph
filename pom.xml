@@ -30,6 +30,14 @@
         <url>git@github.com:flapdoodle-oss/de.flapdoodle.graph.git</url>
     </scm>
 
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+		
+		<immutables.version>2.2.9</immutables.version>
+	</properties>
+
     <!--
     https://docs.sonatype.org/display/Repository/Central+Sync+Requirements
     https://docs.sonatype.org/display/Repository/Sonatype+OSS+Maven+Repository+Usage+Guide
@@ -383,6 +391,19 @@
             <version>1.0.0</version>
         </dependency>
 
+		<dependency>
+			<groupId>org.immutables</groupId>
+			<artifactId>value</artifactId>
+			<version>${immutables.version}</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.immutables</groupId>
+			<artifactId>builder</artifactId>
+			<version>${immutables.version}</version>
+			<scope>provided</scope>
+		</dependency>
 
     </dependencies>
 </project>

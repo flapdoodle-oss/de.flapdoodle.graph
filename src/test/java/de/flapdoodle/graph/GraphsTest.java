@@ -15,11 +15,7 @@ public class GraphsTest {
 		List<Integer> src = Stream.of(1,2,3,4,5,6,7)
 				.collect(Collectors.toList());
 		
-		DefaultDirectedGraph<Integer, DefaultEdge> graph = Graphs.with(src)
-				.graphBuilder(Graphs.<Integer,DefaultEdge>directedGraphBuilder(DefaultEdge.class))
-				.build((a,b) -> { 
-					a.addVertex(b); 
-				});
-		
+		DefaultDirectedGraph<Integer, DefaultEdge> graph = Graphs.with(Graphs.directedGraphBuilder(Integer.class))
+				.build(src, (a,b) -> a.addVertex(b));
 	}
 }

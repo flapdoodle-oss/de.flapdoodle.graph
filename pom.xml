@@ -11,7 +11,7 @@
     <groupId>de.flapdoodle.graph</groupId>
     <artifactId>de.flapdoodle.graph</artifactId>
     <name>Flapdoodle Graph Stuff</name>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
 
     <description>minor extensions for guava</description>
     <url>http://github.com/flapdoodle-oss/de.flapdoodle.graph</url>

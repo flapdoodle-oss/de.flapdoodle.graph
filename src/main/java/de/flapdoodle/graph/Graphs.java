@@ -34,6 +34,7 @@ import org.jgrapht.alg.interfaces.StrongConnectivityAlgorithm;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DirectedMultigraph;
+import org.jgrapht.graph.DirectedPseudograph;
 import org.jgrapht.graph.DirectedSubgraph;
 
 import de.flapdoodle.graph.ImmutableVerticesAndEdges.Builder;
@@ -179,8 +180,13 @@ public class Graphs {
 	}
 	
 	public static <V, E, G extends Graph<V, E>> Supplier<GraphBuilder<V, E, G>> graphBuilder(Supplier<G> graphSupplier) {
-		return () -> new GraphBuilder<V,E,G>(graphSupplier.get());
+		return () -> GraphBuilder.of(graphSupplier.get());
 	}
+	
+	public static <V> Supplier<GraphBuilder<V, DefaultEdge, DefaultDirectedGraph<V, DefaultEdge>>> directedGraphBuilder() {
+		return () -> GraphBuilder.of(Graphs.<V>directedGraph().get());
+	}
+
 
 //	public static <V, E, G extends DirectedGraph<V, E>> Supplier<DirectedGraphBuilder<V, E, G>> directedGraphBuilder(Supplier<G> graphSupplier) {
 //		return () -> new DirectedGraphBuilder<V,E,G>(graphSupplier.get());
@@ -199,8 +205,9 @@ public class Graphs {
 	}
 	
 	public static <V, E> Supplier<DefaultDirectedGraph<V, E>> directedGraph(Class<V> vertexClass, Class<? extends E> edgeClass) {
-		return () -> new DefaultDirectedGraph<V,E>(edgeClass);
+		return directedGraph(edgeClass);
 	}
+	
 	
 	public static <V, E> Supplier<DirectedMultigraph<V, DefaultEdge>> directedMultiEdgeGraph() {
 		return directedMultiEdgeGraph(DefaultEdge.class);
@@ -211,7 +218,20 @@ public class Graphs {
 	}
 	
 	public static <V, E> Supplier<DirectedMultigraph<V, E>> directedMultiEdgeGraph(Class<V> vertexClass, Class<? extends E> edgeClass) {
-		return () -> new DirectedMultigraph<V,E>(edgeClass);
+		return directedMultiEdgeGraph(edgeClass);
+	}
+	
+	
+	public static <V, E> Supplier<DirectedPseudograph<V, DefaultEdge>> directedPseudoEdgeGraph() {
+		return directedPseudoEdgeGraph(DefaultEdge.class);
+	}
+	
+	public static <V, E> Supplier<DirectedPseudograph<V, E>> directedPseudoEdgeGraph(Class<? extends E> edgeClass) {
+		return () -> new DirectedPseudograph<V,E>(edgeClass);
+	}
+	
+	public static <V, E> Supplier<DirectedPseudograph<V, E>> directedPseudoEdgeGraph(Class<V> vertexClass, Class<? extends E> edgeClass) {
+		return directedPseudoEdgeGraph(edgeClass);
 	}
 	
 	public static class GraphBuilder<V,E, G extends Graph<V, E>> {
@@ -260,6 +280,10 @@ public class Graphs {
 				last=o;
 			}
 			return this;
+		}
+		
+		private static <V,E,G extends Graph<V, E>> GraphBuilder<V, E, G> of(G graph) {
+			return new GraphBuilder<V, E, G>(graph);
 		}
 	}
 }

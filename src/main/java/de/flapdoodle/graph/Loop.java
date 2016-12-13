@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013
+ * Copyright (C) 2016
  *   Michael Mosmann <michael@mosmann.de>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

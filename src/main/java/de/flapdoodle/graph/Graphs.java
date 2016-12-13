@@ -97,12 +97,7 @@ public class Graphs {
 			ret.add(verticesAndEdges);
 			ret.addAll(leavesOrRootsOf(filtered, leafes));
 		} else {
-	        StrongConnectivityAlgorithm<V, E> inspector =
-	                new KosarajuStrongConnectivityInspector<>(src);
-	        List<DirectedSubgraph<V, E>> loopingSubGraph = inspector.stronglyConnectedSubgraphs()
-	        		.stream()
-	        		.filter(l -> l.vertexSet().size()>1 || l.containsEdge(l.vertexSet().iterator().next(), l.vertexSet().iterator().next()))
-	        		.collect(Collectors.toList());
+	        List<DirectedSubgraph<V, E>> loopingSubGraph = loopsOfGraph(src);
 	        
 	        Set<V> vertexInLoopSet = loopingSubGraph.stream()
 	        		.flatMap(g -> g.vertexSet().stream())
@@ -117,18 +112,9 @@ public class Graphs {
 //	        System.out.println("~In Loop: "+vertexInLoopSet);
 	        
 	        if (!loopingSubGraph.isEmpty()) {
-	    		Builder<V, E> loopingVerticesAndEdgesBuilder = ImmutableVerticesAndEdges.builder();
-	        	DirectedGraph<V, E> filteredFromLoops = filter(filtered, v -> !vertexInLoopSet.contains(v), t -> loopingVerticesAndEdgesBuilder.addVertices(t), e -> {});
-	        	
-	        	loopingSubGraph.forEach(g -> {
-	        		ImmutableLoop.Builder<V, E> loopBuilder=ImmutableLoop.builder();
-	        		g.edgeSet().forEach(egde -> {
-	        			loopBuilder.addEdges(ImmutableEdge.of(filtered.getEdgeSource(egde), filtered.getEdgeTarget(egde), egde));
-	        		});
-	        		loopingVerticesAndEdgesBuilder.addLoops(loopBuilder.build());
-	        	});
-	        	
-				ImmutableVerticesAndEdges<V, E> loopingVerticesAndEdges = loopingVerticesAndEdgesBuilder.build();
+	        	DirectedGraph<V, E> filteredFromLoops = filter(filtered, v -> !vertexInLoopSet.contains(v), t -> {}, e -> {});
+	    		
+	        	ImmutableVerticesAndEdges<V, E> loopingVerticesAndEdges = verticesAndEdgesOf(loopsOf(loopingSubGraph));
 //				System.out.println("=L======================");
 //				System.out.println(loopingVerticesAndEdges);
 				
@@ -137,6 +123,48 @@ public class Graphs {
 	        }
 		}
 		return Collections.unmodifiableCollection(ret);
+	}
+
+	private static <V, E> ImmutableVerticesAndEdges<V, E> verticesAndEdgesOf(List<? extends Loop<V, E>> loops) {
+		Builder<V, E> loopingVerticesAndEdgesBuilder = ImmutableVerticesAndEdges.builder();
+		
+		loops.forEach(l -> {
+			loopingVerticesAndEdgesBuilder.addAllVertices(l.vertexSet());
+		});
+		loopingVerticesAndEdgesBuilder.addAllLoops(loops);
+		
+		ImmutableVerticesAndEdges<V, E> loopingVerticesAndEdges = loopingVerticesAndEdgesBuilder.build();
+		return loopingVerticesAndEdges;
+	}
+
+	private static <V, E> List<? extends Loop<V, E>> loopsOf(List<DirectedSubgraph<V, E>> loopingSubGraph) {
+		List<Loop<V, E>> ret=new ArrayList<>();
+		
+		loopingSubGraph.forEach(g -> {
+			ImmutableLoop.Builder<V, E> loopBuilder=ImmutableLoop.builder();
+			g.edgeSet().forEach(egde -> {
+				loopBuilder.addEdges(ImmutableEdge.of(g.getEdgeSource(egde), g.getEdgeTarget(egde), egde));
+			});
+			ret.add(loopBuilder.build());
+		});
+		
+		return Collections.unmodifiableList(ret);
+	}
+
+	private static <V, E> List<DirectedSubgraph<V, E>> loopsOfGraph(DirectedGraph<V, E> src) {
+		StrongConnectivityAlgorithm<V, E> inspector =
+		        new KosarajuStrongConnectivityInspector<>(src);
+		
+		List<DirectedSubgraph<V, E>> loopingSubGraph = inspector.stronglyConnectedSubgraphs()
+				.stream()
+				.filter(l -> l.vertexSet().size()>1 || l.containsEdge(l.vertexSet().iterator().next(), l.vertexSet().iterator().next()))
+				.collect(Collectors.toList());
+		
+		return Collections.unmodifiableList(loopingSubGraph);
+	}
+	
+	public static <V, E> List<? extends Loop<V, E>> loopsOf(DirectedGraph<V, E> src) {
+		return loopsOf(loopsOfGraph(src));
 	}
 
 	
@@ -222,16 +250,16 @@ public class Graphs {
 	}
 	
 	
-	public static <V, E> Supplier<DirectedPseudograph<V, DefaultEdge>> directedPseudoEdgeGraph() {
-		return directedPseudoEdgeGraph(DefaultEdge.class);
+	public static <V, E> Supplier<DirectedPseudograph<V, DefaultEdge>> directedPseudoGraph() {
+		return directedPseudoGraph(DefaultEdge.class);
 	}
 	
-	public static <V, E> Supplier<DirectedPseudograph<V, E>> directedPseudoEdgeGraph(Class<? extends E> edgeClass) {
+	public static <V, E> Supplier<DirectedPseudograph<V, E>> directedPseudoGraph(Class<? extends E> edgeClass) {
 		return () -> new DirectedPseudograph<V,E>(edgeClass);
 	}
 	
-	public static <V, E> Supplier<DirectedPseudograph<V, E>> directedPseudoEdgeGraph(Class<V> vertexClass, Class<? extends E> edgeClass) {
-		return directedPseudoEdgeGraph(edgeClass);
+	public static <V, E> Supplier<DirectedPseudograph<V, E>> directedPseudoGraph(Class<V> vertexClass, Class<? extends E> edgeClass) {
+		return directedPseudoGraph(edgeClass);
 	}
 	
 	public static class GraphBuilder<V,E, G extends Graph<V, E>> {

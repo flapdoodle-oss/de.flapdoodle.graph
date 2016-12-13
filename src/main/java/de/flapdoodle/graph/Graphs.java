@@ -16,32 +16,138 @@
  */
 package de.flapdoodle.graph;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.jgrapht.DirectedGraph;
 import org.jgrapht.Graph;
+import org.jgrapht.alg.KosarajuStrongConnectivityInspector;
+import org.jgrapht.alg.interfaces.StrongConnectivityAlgorithm;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.DirectedSubgraph;
 import org.jgrapht.graph.builder.AbstractGraphBuilder;
 import org.jgrapht.graph.builder.DirectedGraphBuilder;
+
+import de.flapdoodle.graph.ImmutableVerticesAndEdges.Builder;
 
 public class Graphs {
 
 	public static <V,E> DirectedGraph<V, E> filter(DirectedGraph<V, E> src, Predicate<V> filter) {
+		return filter(src,filter,v -> {}, edge -> {});
+	}
+	
+	public static <V,E> DirectedGraph<V, E> filter(DirectedGraph<V, E> src, Predicate<V> filter, Consumer<V> filteredVertexConsumer, Consumer<E> filteredEdgeConsumer) {
 		DefaultDirectedGraph<V, E> ret = new DefaultDirectedGraph<>(src.getEdgeFactory());
 		
 		src.vertexSet().forEach(v -> {
 			if (filter.test(v)) {
 				ret.addVertex(v);
-				
-				src.outgoingEdgesOf(v);
+			} else {
+				filteredVertexConsumer.accept(v);
+			}
+		});
+		
+		src.edgeSet().forEach(edge -> {
+			V source = src.getEdgeSource(edge);
+			V target = src.getEdgeTarget(edge);
+			if (filter.test(source) && filter.test(target)) {
+				ret.addEdge(source, target, edge);
+			} else {
+				filteredEdgeConsumer.accept(edge);
 			}
 		});
 		
 		return ret;
 	}
+	
+	public static <V,E> Collection<VerticesAndEdges<V, E>> leavesOf(DirectedGraph<V, E> src) {
+		return leavesOrRootsOf(src, true);
+	}
+	
+	public static <V,E> Collection<VerticesAndEdges<V, E>> rootsOf(DirectedGraph<V, E> src) {
+		return leavesOrRootsOf(src, false);
+	}
+	
+	private static <V,E> Collection<VerticesAndEdges<V, E>> leavesOrRootsOf(DirectedGraph<V, E> src,boolean leafes) {
+		List<VerticesAndEdges<V,E>> ret=new ArrayList<>();
+
+		Builder<V, E> builder = ImmutableVerticesAndEdges.builder();
+		
+//		System.out.println("----------------------");
+//		System.out.println(GraphAsDot.<V>builder(s -> s.toString())
+//			.build().asDot(src));
+		
+		DirectedGraph<V, E> filtered = filter(src, leafes ? isLeaf(src).negate() : isRoot(src).negate(), t -> builder.addVertices(t), e -> builder.addEdges(ImmutableEdge.of(src.getEdgeSource(e), src.getEdgeTarget(e), e)));
+		
+		ImmutableVerticesAndEdges<V, E> verticesAndEdges = builder.build();
+		
+//		System.out.println("========================");
+//		System.out.println(verticesAndEdges);
+		
+		if (!verticesAndEdges.vertices().isEmpty()) {
+			ret.add(verticesAndEdges);
+			ret.addAll(leavesOrRootsOf(filtered, leafes));
+		} else {
+	        StrongConnectivityAlgorithm<V, E> inspector =
+	                new KosarajuStrongConnectivityInspector<>(src);
+	        List<DirectedSubgraph<V, E>> loopingSubGraph = inspector.stronglyConnectedSubgraphs()
+	        		.stream()
+	        		.filter(l -> l.vertexSet().size()>1 || l.containsEdge(l.vertexSet().iterator().next(), l.vertexSet().iterator().next()))
+	        		.collect(Collectors.toList());
+	        
+	        Set<V> vertexInLoopSet = loopingSubGraph.stream()
+	        		.flatMap(g -> g.vertexSet().stream())
+	        		.collect(Collectors.toSet());
+	        
+//	        loopingSubGraph.forEach(l -> {
+//				System.out.println("~Loop~~~~~~");
+//				System.out.println(GraphAsDot.<V>builder(s -> s.toString())
+//					.build().asDot(l));
+//	        });
+//	        
+//	        System.out.println("~In Loop: "+vertexInLoopSet);
+	        
+	        if (!loopingSubGraph.isEmpty()) {
+	    		Builder<V, E> loopingVerticesAndEdgesBuilder = ImmutableVerticesAndEdges.builder();
+	        	DirectedGraph<V, E> filteredFromLoops = filter(filtered, v -> !vertexInLoopSet.contains(v), t -> loopingVerticesAndEdgesBuilder.addVertices(t), e -> {});
+	        	
+	        	loopingSubGraph.forEach(g -> {
+	        		ImmutableLoop.Builder<V, E> loopBuilder=ImmutableLoop.builder();
+	        		g.edgeSet().forEach(egde -> {
+	        			loopBuilder.addEdges(ImmutableEdge.of(filtered.getEdgeSource(egde), filtered.getEdgeTarget(egde), egde));
+	        		});
+	        		loopingVerticesAndEdgesBuilder.addLoops(loopBuilder.build());
+	        	});
+	        	
+				ImmutableVerticesAndEdges<V, E> loopingVerticesAndEdges = loopingVerticesAndEdgesBuilder.build();
+//				System.out.println("=L======================");
+//				System.out.println(loopingVerticesAndEdges);
+				
+				ret.add(loopingVerticesAndEdges);
+				ret.addAll(leavesOrRootsOf(filteredFromLoops, leafes));
+	        }
+		}
+		return Collections.unmodifiableCollection(ret);
+	}
+
+	
+	public static <V> Predicate<V> isLeaf(DirectedGraph<V, ?> graph) {
+		return v -> graph.outDegreeOf(v) == 0;
+	}
+	
+	public static <V> Predicate<V> isRoot(DirectedGraph<V, ?> graph) {
+		return v -> graph.inDegreeOf(v) == 0;
+	}
+	
 	
 	public static <V, E, G extends Graph<V, E>, B extends AbstractGraphBuilder<V, E, G, B>> WithGraphBuilder<V,E,G,B> with(Supplier<B> graphSupplier) {
 		return new WithGraphBuilder<V,E,G,B>(graphSupplier);
@@ -60,6 +166,14 @@ public class Graphs {
 			B ret = graphSupplier.get();
 			
 			src.forEach(t -> forEach.accept(ret, t));
+			
+			return ret.build();
+		}
+		
+		public G build(Consumer<B> graphBuilderConsumer) {
+			B ret = graphSupplier.get();
+			
+			graphBuilderConsumer.accept(ret);
 			
 			return ret.build();
 		}

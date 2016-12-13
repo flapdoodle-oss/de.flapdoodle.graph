@@ -33,9 +33,8 @@ import org.jgrapht.alg.KosarajuStrongConnectivityInspector;
 import org.jgrapht.alg.interfaces.StrongConnectivityAlgorithm;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.DirectedMultigraph;
 import org.jgrapht.graph.DirectedSubgraph;
-import org.jgrapht.graph.builder.AbstractGraphBuilder;
-import org.jgrapht.graph.builder.DirectedGraphBuilder;
 
 import de.flapdoodle.graph.ImmutableVerticesAndEdges.Builder;
 
@@ -149,29 +148,29 @@ public class Graphs {
 	}
 	
 	
-	public static <V, E, G extends Graph<V, E>, B extends AbstractGraphBuilder<V, E, G, B>> WithGraphBuilder<V,E,G,B> with(Supplier<B> graphSupplier) {
-		return new WithGraphBuilder<V,E,G,B>(graphSupplier);
+	public static <V, E, G extends Graph<V, E>> WithGraphBuilder<V,E,G> with(Supplier<GraphBuilder<V,E,G>> graphSupplier) {
+		return new WithGraphBuilder<V,E,G>(graphSupplier);
 	}
 	
 	
-	public static class WithGraphBuilder<V, E, G extends Graph<V, E>, B extends AbstractGraphBuilder<V, E, G, B>> {
+	public static class WithGraphBuilder<V, E, G extends Graph<V, E>> {
 		
-		private final Supplier<B> graphSupplier;
+		private final Supplier<GraphBuilder<V,E,G>> graphSupplier;
 
-		public WithGraphBuilder(Supplier<B> graphSupplier) {
+		public WithGraphBuilder(Supplier<GraphBuilder<V,E,G>> graphSupplier) {
 			this.graphSupplier = graphSupplier;
 		}
 		
-		public <T> G build(Iterable<T> src, BiConsumer<? super B, T> forEach) {
-			B ret = graphSupplier.get();
+		public <T> G build(Iterable<T> src, BiConsumer<? super GraphBuilder<V,E,?>, T> forEach) {
+			GraphBuilder<V, E, G> ret = graphSupplier.get();
 			
 			src.forEach(t -> forEach.accept(ret, t));
 			
 			return ret.build();
 		}
 		
-		public G build(Consumer<B> graphBuilderConsumer) {
-			B ret = graphSupplier.get();
+		public G build(Consumer<? super GraphBuilder<V,E,?>> graphBuilderConsumer) {
+			GraphBuilder<V, E, G> ret = graphSupplier.get();
 			
 			graphBuilderConsumer.accept(ret);
 			
@@ -179,11 +178,88 @@ public class Graphs {
 		}
 	}
 	
-	public static <V, E> Supplier<DirectedGraphBuilder<V, E, DefaultDirectedGraph<V, E>>> directedGraphBuilder(Class<V> vertexType, Class<? extends E> edgeClass) {
-		return () -> new DirectedGraphBuilder<V,E,DefaultDirectedGraph<V, E>>(new DefaultDirectedGraph<V,E>(edgeClass));
+	public static <V, E, G extends Graph<V, E>> Supplier<GraphBuilder<V, E, G>> graphBuilder(Supplier<G> graphSupplier) {
+		return () -> new GraphBuilder<V,E,G>(graphSupplier.get());
+	}
+
+//	public static <V, E, G extends DirectedGraph<V, E>> Supplier<DirectedGraphBuilder<V, E, G>> directedGraphBuilder(Supplier<G> graphSupplier) {
+//		return () -> new DirectedGraphBuilder<V,E,G>(graphSupplier.get());
+//	}
+//	
+//	public static <V> Supplier<DirectedGraphBuilder<V, DefaultEdge, DefaultDirectedGraph<V, DefaultEdge>>> directedGraphBuilder() {
+//		return Graphs.directedGraphBuilder(Graphs.directedGraph(DefaultEdge.class));
+//	}
+
+	public static <V> Supplier<DefaultDirectedGraph<V, DefaultEdge>> directedGraph() {
+		return directedGraph(DefaultEdge.class);
+	}
+
+	public static <V, E> Supplier<DefaultDirectedGraph<V, E>> directedGraph(Class<? extends E> edgeClass) {
+		return () -> new DefaultDirectedGraph<V,E>(edgeClass);
 	}
 	
-	public static <V> Supplier<DirectedGraphBuilder<V, DefaultEdge, DefaultDirectedGraph<V, DefaultEdge>>> directedGraphBuilder(Class<V> vertexType) {
-		return directedGraphBuilder(vertexType, DefaultEdge.class);
+	public static <V, E> Supplier<DefaultDirectedGraph<V, E>> directedGraph(Class<V> vertexClass, Class<? extends E> edgeClass) {
+		return () -> new DefaultDirectedGraph<V,E>(edgeClass);
+	}
+	
+	public static <V, E> Supplier<DirectedMultigraph<V, DefaultEdge>> directedMultiEdgeGraph() {
+		return directedMultiEdgeGraph(DefaultEdge.class);
+	}
+	
+	public static <V, E> Supplier<DirectedMultigraph<V, E>> directedMultiEdgeGraph(Class<? extends E> edgeClass) {
+		return () -> new DirectedMultigraph<V,E>(edgeClass);
+	}
+	
+	public static <V, E> Supplier<DirectedMultigraph<V, E>> directedMultiEdgeGraph(Class<V> vertexClass, Class<? extends E> edgeClass) {
+		return () -> new DirectedMultigraph<V,E>(edgeClass);
+	}
+	
+	public static class GraphBuilder<V,E, G extends Graph<V, E>> {
+
+		private final G graph;
+
+		public GraphBuilder(G graph) {
+			this.graph = graph;
+		}
+
+		public G build() {
+			return graph;
+		}
+
+		public GraphBuilder<V,E,G> addVertex(V v) {
+			graph.addVertex(v);
+			return this;
+		}
+
+		public GraphBuilder<V,E,G> addEdge(V a, V b) {
+			graph.addEdge(a, b);
+			return this;
+		}
+		
+		public GraphBuilder<V,E,G> addEdge(V a, V b, E edge) {
+			graph.addEdge(a, b, edge);
+			return this;
+		}
+
+		public GraphBuilder<V,E,G> addVertices(V a, V b, V ... other) {
+			graph.addVertex(a);
+			graph.addVertex(b);
+			for (V o : other) {
+				graph.addVertex(o);
+			}
+			return this;
+		}
+
+		public GraphBuilder<V,E,G> addEdgeChain(V a, V b, V ... other) {
+			addVertices(a, b, other);
+			
+			graph.addEdge(a,b);
+			V last=b;
+			for (V o : other) {
+				graph.addEdge(last,o);
+				last=o;
+			}
+			return this;
+		}
 	}
 }

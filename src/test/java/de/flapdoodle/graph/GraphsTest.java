@@ -17,6 +17,9 @@
 package de.flapdoodle.graph;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -226,6 +229,22 @@ public class GraphsTest {
 				builder.addEdge("D","Dc");
 				builder.addEdge("Dc","C");
 			});
-			
+		assertNotNull(graph);
+	}
+	
+	@Test
+	public void isShortestPathIsDirected() {
+		DefaultDirectedGraph<String, DefaultEdge> graph = Graphs.with(Graphs.graphBuilder(Graphs.directedGraph(String.class, DefaultEdge.class)))
+				.build(builder -> {
+					builder.addVertices("A","B","C");
+					builder.addEdge("A","B");
+					builder.addEdge("C","B");
+				});
+
+		assertTrue(Graphs.hasPath(graph, "A", "B"));
+		assertTrue(Graphs.hasPath(graph, "C", "B"));
+		assertFalse(Graphs.hasPath(graph, "A", "C"));
+		assertFalse(Graphs.hasPath(graph, "B", "C"));
+		assertFalse(Graphs.hasPath(graph, "B", "A"));
 	}
 }

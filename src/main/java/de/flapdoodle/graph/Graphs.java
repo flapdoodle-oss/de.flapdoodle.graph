@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 
 import org.jgrapht.DirectedGraph;
 import org.jgrapht.Graph;
+import org.jgrapht.alg.DijkstraShortestPath;
 import org.jgrapht.alg.KosarajuStrongConnectivityInspector;
 import org.jgrapht.alg.interfaces.StrongConnectivityAlgorithm;
 import org.jgrapht.graph.DefaultDirectedGraph;
@@ -313,5 +314,10 @@ public class Graphs {
 		private static <V,E,G extends Graph<V, E>> GraphBuilder<V, E, G> of(G graph) {
 			return new GraphBuilder<V, E, G>(graph);
 		}
+	}
+	
+	public static <V> boolean hasPath(DirectedGraph<V, ?> graph, V from, V to) {
+		List<?> paths = DijkstraShortestPath.findPathBetween(graph, from, to);
+		return paths!=null && !paths.isEmpty();
 	}
 }

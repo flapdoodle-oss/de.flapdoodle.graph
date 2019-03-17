@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.jgrapht.DirectedGraph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.junit.Test;
@@ -50,7 +49,7 @@ public class GraphsTest {
 		assertEquals("[1, 2, 3, 4, 5, 6, 7]", graph.vertexSet().toString());
 		assertEquals("[(2 : 1), (3 : 1), (4 : 1), (5 : 1), (6 : 1), (7 : 1)]", graph.edgeSet().toString());
 		
-		DirectedGraph<Integer, DefaultEdge> filtered = Graphs.filter(graph, v -> v % 2 !=0);
+		DefaultDirectedGraph<Integer, DefaultEdge> filtered = Graphs.filter(graph, v -> v % 2 !=0);
 		
 		assertEquals("[1, 3, 5, 7]", filtered.vertexSet().toString());
 		assertEquals("[(3 : 1), (5 : 1), (7 : 1)]", filtered.edgeSet().toString());

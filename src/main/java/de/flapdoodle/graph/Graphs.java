@@ -27,27 +27,26 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import org.jgrapht.DirectedGraph;
 import org.jgrapht.Graph;
-import org.jgrapht.alg.DijkstraShortestPath;
-import org.jgrapht.alg.KosarajuStrongConnectivityInspector;
+import org.jgrapht.GraphPath;
+import org.jgrapht.alg.connectivity.KosarajuStrongConnectivityInspector;
 import org.jgrapht.alg.interfaces.StrongConnectivityAlgorithm;
+import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DirectedMultigraph;
 import org.jgrapht.graph.DirectedPseudograph;
-import org.jgrapht.graph.DirectedSubgraph;
 
 import de.flapdoodle.graph.ImmutableVerticesAndEdges.Builder;
 
 public class Graphs {
 
-	public static <V,E> DirectedGraph<V, E> filter(DirectedGraph<V, E> src, Predicate<V> filter) {
+	public static <V,E> DefaultDirectedGraph<V, E> filter(DefaultDirectedGraph<V, E> src, Predicate<V> filter) {
 		return filter(src,filter,v -> {}, edge -> {});
 	}
 	
-	public static <V,E> DirectedGraph<V, E> filter(DirectedGraph<V, E> src, Predicate<V> filter, Consumer<V> filteredVertexConsumer, Consumer<E> filteredEdgeConsumer) {
-		DefaultDirectedGraph<V, E> ret = new DefaultDirectedGraph<>(src.getEdgeFactory());
+	public static <V,E> DefaultDirectedGraph<V, E> filter(DefaultDirectedGraph<V, E> src, Predicate<V> filter, Consumer<V> filteredVertexConsumer, Consumer<E> filteredEdgeConsumer) {
+		DefaultDirectedGraph<V, E> ret = new DefaultDirectedGraph<>(src.getVertexSupplier(), src.getEdgeSupplier(), src.getType().isWeighted());
 		
 		src.vertexSet().forEach(v -> {
 			if (filter.test(v)) {
@@ -70,54 +69,37 @@ public class Graphs {
 		return ret;
 	}
 	
-	public static <V,E> Collection<VerticesAndEdges<V, E>> leavesOf(DirectedGraph<V, E> src) {
+	public static <V,E> Collection<VerticesAndEdges<V, E>> leavesOf(DefaultDirectedGraph<V, E> src) {
 		return leavesOrRootsOf(src, true);
 	}
 	
-	public static <V,E> Collection<VerticesAndEdges<V, E>> rootsOf(DirectedGraph<V, E> src) {
+	public static <V,E> Collection<VerticesAndEdges<V, E>> rootsOf(DefaultDirectedGraph<V, E> src) {
 		return leavesOrRootsOf(src, false);
 	}
 	
-	private static <V,E> Collection<VerticesAndEdges<V, E>> leavesOrRootsOf(DirectedGraph<V, E> src,boolean leafes) {
+	private static <V,E> Collection<VerticesAndEdges<V, E>> leavesOrRootsOf(DefaultDirectedGraph<V, E> src,boolean leafes) {
 		List<VerticesAndEdges<V,E>> ret=new ArrayList<>();
 
 		Builder<V, E> builder = ImmutableVerticesAndEdges.builder();
 		
-//		System.out.println("----------------------");
-//		System.out.println(GraphAsDot.<V>builder(s -> s.toString())
-//			.build().asDot(src));
-		
-		DirectedGraph<V, E> filtered = filter(src, leafes ? isLeaf(src).negate() : isRoot(src).negate(), t -> builder.addVertices(t), e -> builder.addEdges(ImmutableEdge.of(src.getEdgeSource(e), src.getEdgeTarget(e), e)));
+		DefaultDirectedGraph<V, E> filtered = filter(src, leafes ? isLeaf(src).negate() : isRoot(src).negate(), t -> builder.addVertices(t), e -> builder.addEdges(ImmutableEdge.of(src.getEdgeSource(e), src.getEdgeTarget(e), e)));
 		
 		ImmutableVerticesAndEdges<V, E> verticesAndEdges = builder.build();
-		
-//		System.out.println("========================");
-//		System.out.println(verticesAndEdges);
 		
 		if (!verticesAndEdges.vertices().isEmpty()) {
 			ret.add(verticesAndEdges);
 			ret.addAll(leavesOrRootsOf(filtered, leafes));
 		} else {
-	        List<DirectedSubgraph<V, E>> loopingSubGraph = loopsOfGraph(src);
+	        List<Graph<V, E>> loopingSubGraph = loopsOfGraph(src);
 	        
 	        Set<V> vertexInLoopSet = loopingSubGraph.stream()
 	        		.flatMap(g -> g.vertexSet().stream())
 	        		.collect(Collectors.toSet());
 	        
-//	        loopingSubGraph.forEach(l -> {
-//				System.out.println("~Loop~~~~~~");
-//				System.out.println(GraphAsDot.<V>builder(s -> s.toString())
-//					.build().asDot(l));
-//	        });
-//	        
-//	        System.out.println("~In Loop: "+vertexInLoopSet);
-	        
 	        if (!loopingSubGraph.isEmpty()) {
-	        	DirectedGraph<V, E> filteredFromLoops = filter(filtered, v -> !vertexInLoopSet.contains(v), t -> {}, e -> {});
+	        	DefaultDirectedGraph<V, E> filteredFromLoops = filter(filtered, v -> !vertexInLoopSet.contains(v), t -> {}, e -> {});
 	    		
 	        	ImmutableVerticesAndEdges<V, E> loopingVerticesAndEdges = verticesAndEdgesOf(loopsOf(loopingSubGraph));
-//				System.out.println("=L======================");
-//				System.out.println(loopingVerticesAndEdges);
 				
 				ret.add(loopingVerticesAndEdges);
 				ret.addAll(leavesOrRootsOf(filteredFromLoops, leafes));
@@ -138,7 +120,7 @@ public class Graphs {
 		return loopingVerticesAndEdges;
 	}
 
-	private static <V, E> List<? extends Loop<V, E>> loopsOf(List<DirectedSubgraph<V, E>> loopingSubGraph) {
+	private static <V, E> List<? extends Loop<V, E>> loopsOf(List<Graph<V, E>> loopingSubGraph) {
 		List<Loop<V, E>> ret=new ArrayList<>();
 		
 		loopingSubGraph.forEach(g -> {
@@ -152,11 +134,10 @@ public class Graphs {
 		return Collections.unmodifiableList(ret);
 	}
 
-	private static <V, E> List<DirectedSubgraph<V, E>> loopsOfGraph(DirectedGraph<V, E> src) {
-		StrongConnectivityAlgorithm<V, E> inspector =
-		        new KosarajuStrongConnectivityInspector<>(src);
+	private static <V, E> List<Graph<V, E>> loopsOfGraph(DefaultDirectedGraph<V, E> src) {
+		StrongConnectivityAlgorithm<V, E> inspector =	new KosarajuStrongConnectivityInspector<>(src);
 		
-		List<DirectedSubgraph<V, E>> loopingSubGraph = inspector.stronglyConnectedSubgraphs()
+		List<Graph<V, E>> loopingSubGraph = inspector.getStronglyConnectedComponents()
 				.stream()
 				.filter(l -> l.vertexSet().size()>1 || l.containsEdge(l.vertexSet().iterator().next(), l.vertexSet().iterator().next()))
 				.collect(Collectors.toList());
@@ -164,16 +145,16 @@ public class Graphs {
 		return Collections.unmodifiableList(loopingSubGraph);
 	}
 	
-	public static <V, E> List<? extends Loop<V, E>> loopsOf(DirectedGraph<V, E> src) {
+	public static <V, E> List<? extends Loop<V, E>> loopsOf(DefaultDirectedGraph<V, E> src) {
 		return loopsOf(loopsOfGraph(src));
 	}
 
 	
-	public static <V> Predicate<V> isLeaf(DirectedGraph<V, ?> graph) {
+	public static <V> Predicate<V> isLeaf(DefaultDirectedGraph<V, ?> graph) {
 		return v -> graph.outDegreeOf(v) == 0;
 	}
 	
-	public static <V> Predicate<V> isRoot(DirectedGraph<V, ?> graph) {
+	public static <V> Predicate<V> isRoot(DefaultDirectedGraph<V, ?> graph) {
 		return v -> graph.inDegreeOf(v) == 0;
 	}
 	
@@ -216,14 +197,6 @@ public class Graphs {
 		return () -> GraphBuilder.of(Graphs.<V>directedGraph().get());
 	}
 
-
-//	public static <V, E, G extends DirectedGraph<V, E>> Supplier<DirectedGraphBuilder<V, E, G>> directedGraphBuilder(Supplier<G> graphSupplier) {
-//		return () -> new DirectedGraphBuilder<V,E,G>(graphSupplier.get());
-//	}
-//	
-//	public static <V> Supplier<DirectedGraphBuilder<V, DefaultEdge, DefaultDirectedGraph<V, DefaultEdge>>> directedGraphBuilder() {
-//		return Graphs.directedGraphBuilder(Graphs.directedGraph(DefaultEdge.class));
-//	}
 
 	public static <V> Supplier<DefaultDirectedGraph<V, DefaultEdge>> directedGraph() {
 		return directedGraph(DefaultEdge.class);
@@ -290,7 +263,7 @@ public class Graphs {
 			return this;
 		}
 
-		public GraphBuilder<V,E,G> addVertices(V a, V b, V ... other) {
+		public GraphBuilder<V,E,G> addVertices(V a, V b, @SuppressWarnings("unchecked") V ... other) {
 			graph.addVertex(a);
 			graph.addVertex(b);
 			for (V o : other) {
@@ -299,7 +272,7 @@ public class Graphs {
 			return this;
 		}
 
-		public GraphBuilder<V,E,G> addEdgeChain(V a, V b, V ... other) {
+		public GraphBuilder<V,E,G> addEdgeChain(V a, V b, @SuppressWarnings("unchecked") V ... other) {
 			addVertices(a, b, other);
 			
 			graph.addEdge(a,b);
@@ -316,8 +289,8 @@ public class Graphs {
 		}
 	}
 	
-	public static <V> boolean hasPath(DirectedGraph<V, ?> graph, V from, V to) {
-		List<?> paths = DijkstraShortestPath.findPathBetween(graph, from, to);
-		return paths!=null && !paths.isEmpty();
+	public static <V> boolean hasPath(DefaultDirectedGraph<V, ?> graph, V from, V to) {
+		GraphPath<V, ?> paths = DijkstraShortestPath.findPathBetween(graph, from, to);
+		return paths!=null && !paths.getEdgeList().isEmpty();
 	}
 }

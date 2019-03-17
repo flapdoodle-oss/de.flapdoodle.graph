@@ -263,7 +263,8 @@ public class Graphs {
 			return this;
 		}
 
-		public GraphBuilder<V,E,G> addVertices(V a, V b, @SuppressWarnings("unchecked") V ... other) {
+		@SuppressWarnings("unchecked")
+		public GraphBuilder<V,E,G> addVertices(V a, V b, V ... other) {
 			graph.addVertex(a);
 			graph.addVertex(b);
 			for (V o : other) {
@@ -272,7 +273,8 @@ public class Graphs {
 			return this;
 		}
 
-		public GraphBuilder<V,E,G> addEdgeChain(V a, V b, @SuppressWarnings("unchecked") V ... other) {
+		@SuppressWarnings("unchecked")
+		public GraphBuilder<V,E,G> addEdgeChain(V a, V b, V ... other) {
 			addVertices(a, b, other);
 			
 			graph.addEdge(a,b);

@@ -8,12 +8,12 @@ graph stuff
 
 ### Maven
 
-Stable (Maven Central Repository, Released: 13.12.2016 - wait 24hrs for [maven central](http://repo1.maven.org/maven2/de/flapdoodle/guava/de.flapdoodle.graph/maven-metadata.xml))
+Stable (Maven Central Repository, Released: 17.03.2019 - wait 24hrs for [maven central](http://repo1.maven.org/maven2/de/flapdoodle/guava/de.flapdoodle.graph/maven-metadata.xml))
 
 	<dependency>
 		<groupId>de.flapdoodle.graph</groupId>
 		<artifactId>de.flapdoodle.graph</artifactId>
-		<version>1.0.0</version>
+		<version>1.1.0</version>
 	</dependency>
 
 Snapshots (Repository http://oss.sonatype.org/content/repositories/snapshots)
@@ -21,6 +21,6 @@ Snapshots (Repository http://oss.sonatype.org/content/repositories/snapshots)
 	<dependency>
 		<groupId>de.flapdoodle.graph</groupId>
 		<artifactId>de.flapdoodle.graph</artifactId>
-		<version>1.0.1-SNAPSHOT</version>
+		<version>1.1.1-SNAPSHOT</version>
 	</dependency>
 

@@ -1,2 +1,2 @@
 #!/bin/sh
-mvn release:prepare -DdryRun
+./mvnw release:prepare -DdryRun

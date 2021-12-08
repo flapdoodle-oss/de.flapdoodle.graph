@@ -1,0 +1,10 @@
+digraph graph {
+	rankdir=LR;
+
+	"A";
+	"B";
+	"C";
+
+	"A" -> "B";
+	"C" -> "B";
+}

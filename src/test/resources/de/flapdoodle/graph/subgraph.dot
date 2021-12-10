@@ -2,16 +2,21 @@ digraph "graph" {
 	rankdir=LR;
 
 	"A";
-subgraph cluster_0 {
-	"x";
-	"y";
-	"z";
+	"B.in";
+	subgraph cluster_0 {
+		label = "B";
+		"x";
+		"y";
+		"z";
 
-	"x" -> "y";
-	"y" -> "z";
-}
+		"x" -> "y";
+		"y" -> "z";
+	}
+	"B.out";
 	"C";
 
-	"A" -> "B";
-	"C" -> "B";
+	"A" -> "B.in";
+	"B.in" -> "x";
+	"z" -> "B.out";
+	"B.out" -> "C";
 }

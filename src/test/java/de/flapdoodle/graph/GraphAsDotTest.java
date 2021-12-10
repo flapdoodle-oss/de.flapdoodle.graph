@@ -64,23 +64,38 @@ class GraphAsDotTest {
 				builder.addEdge(y, z);
 			});
 
+		ImmutableWithGraph subGraph = Vertex.WithGraph.of("B", sub)
+			.in(Vertex.Named.of("B.in"))
+			.out(Vertex.Named.of("B.out"))
+			.putConnections(Vertex.Named.of("B.in"), Vertex.Named.of("x"))
+			.putConnections(Vertex.Named.of("B.out"), Vertex.Named.of("z"))
+			.build();
+
 		DefaultDirectedGraph<Vertex, DefaultEdge> graph = Graphs.with(Graphs.graphBuilder(Graphs.directedGraph(Vertex.class, DefaultEdge.class)))
 			.build(builder -> {
 				Vertex.Named a = Vertex.Named.of("A");
-				Vertex.WithGraph b = Vertex.WithGraph.of("B", sub);
+				Vertex.WithGraph b = subGraph;
 				Vertex.Named c = Vertex.Named.of("C");
 
-				builder.addVertices(a, b, c);
-				builder.addEdge(a, b);
-				builder.addEdge(c, b);
+				builder.addVertices(a, b.in(), b, b.out(), c);
+				builder.addEdge(a, b.in());
+				builder.addEdge(b.in(), b);
+				builder.addEdge(b, b.out());
+				builder.addEdge(b.out(), c);
 				
 			});
 
 		String dotFile = GraphAsDot.<Vertex>builder(Vertex::name)
-			.subGraph(v -> v instanceof Vertex.WithGraph
-				? Optional.of(GraphAsDot.SubGraph.of(((Vertex.WithGraph) v).graph())
-				.build())
-				: Optional.empty())
+			.subGraph(v -> {
+				if (v instanceof Vertex.WithGraph) {
+					Vertex.WithGraph withGraph = (Vertex.WithGraph) v;
+
+					return Optional.of(GraphAsDot.SubGraph.of(withGraph.graph())
+						.connections(withGraph.connections())
+						.build());
+				}
+				return Optional.empty();
+			})
 			.build()
 			.asDot(graph);
 

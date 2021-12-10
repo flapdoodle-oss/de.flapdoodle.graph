@@ -18,6 +18,9 @@ package de.flapdoodle.graph;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -29,40 +32,66 @@ import org.immutables.value.Value.Default;
 import org.jgrapht.Graph;
 
 @Value.Immutable
-public interface GraphAsDot<T> {
+public abstract class GraphAsDot<T> {
 
-	@Parameter
-	Function<T, String> nodeAsString();
+	@Parameter public abstract Function<T, String> nodeAsString();
 	
 	@Default
-	default BiFunction<T, T, Map<String, String>> edgeAttributes() {
+	public BiFunction<T, T, Map<String, String>> edgeAttributes() {
 		return (a,b) -> Collections.emptyMap();
 	}
 
 	@Default
-	default Function<T, Map<String, String>> nodeAttributes() {
+	public Function<T, Map<String, String>> nodeAttributes() {
 		return (a) -> Collections.emptyMap();
 	}
 
 	@Default
-	default String label() {
+	public Function<T, Optional<SubGraph<T>>> subGraph() {
+		return (a) -> Optional.empty();
+	}
+
+	@Default
+	public String label() {
 		return "graph";
 	}
 	
 	@Auxiliary
-	default <E> String asDot(Graph<T,E> graph) {
+	public <E> String asDot(Graph<T, E> graph) {
 		StringBuilder sb=new StringBuilder();
-		
-		sb.append("digraph ").append(label()).append(" {\n")
+
+		sb.append("digraph \"").append(label()).append("\" {\n")
 			.append("	rankdir=LR;\n")
 			.append("\n");
 
-		graph.vertexSet().forEach(v -> {
-			sb.append("\t").append(quote(nodeAsString().apply(v))).append(asNodeAttributes(nodeAttributes().apply(v))).append(";\n");
-		});
-		
+		AtomicInteger clusterCounter=new AtomicInteger();
+
+		render(graph, sb, clusterCounter);
+
+		sb.append("}\n");
+		return sb.toString();
+	}
+
+	private <E> void render(Graph<T, E> graph, StringBuilder sb, AtomicInteger clusterCounter) {
+		renderNodes(graph, sb, clusterCounter);
 		sb.append("\n");
-		
+		renderEdges(graph, sb);
+	}
+
+	private <E> void renderNodes(Graph<T, E> graph, StringBuilder sb, AtomicInteger clusterCounter) {
+		graph.vertexSet().forEach(v -> {
+			Optional<SubGraph<T>> subGraph = subGraph().apply(v);
+			if (subGraph.isPresent()) {
+				    sb.append("subgraph cluster_"+ clusterCounter.getAndIncrement()+" {\n");
+						render(subGraph.get().graph(), sb, clusterCounter);
+						sb.append("}\n");
+			} else {
+				sb.append("\t").append(quote(nodeAsString().apply(v))).append(asNodeAttributes(nodeAttributes().apply(v))).append(";\n");
+			}
+		});
+	}
+
+	private <E> void renderEdges(Graph<T, E> graph, StringBuilder sb) {
 		graph.edgeSet().forEach((edge) -> {
 			T a = graph.getEdgeSource(edge);
 			T b = graph.getEdgeTarget(edge);
@@ -72,21 +101,28 @@ public interface GraphAsDot<T> {
 				.append(quote(nodeAsString().apply(b)))
 				.append(asNodeAttributes(edgeAttributes().apply(a,b))).append(";\n");
 		});
-		
-		sb.append("}\n");
-		return sb.toString();
 	}
-	
+
 	@Auxiliary
-	default String asNodeAttributes(Map<String, String> map) {
+	public String asNodeAttributes(Map<String, String> map) {
 		return map.isEmpty() 
 				? "" 
 				: "[ "+map.entrySet().stream().map(e -> e.getKey()+"="+quote(e.getValue())).collect(Collectors.joining(", ")) +" ]";
 	}
 
 	@Auxiliary
-	default String quote(String src) {
+	public String quote(String src) {
 		return "\""+src+"\"";
+	}
+
+	@Value.Immutable
+	public interface SubGraph<T> {
+		@Parameter
+		Graph<T, ?> graph();
+
+		static <T> ImmutableSubGraph.Builder<T> of(Graph<T,?> graph) {
+			return ImmutableSubGraph.builder(graph);
+		}
 	}
 
 	public static <T> ImmutableGraphAsDot.Builder<T> builder(Function<T, String> nodeAsString) {

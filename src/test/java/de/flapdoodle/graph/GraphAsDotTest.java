@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,6 +49,43 @@ class GraphAsDotTest {
 
 		assertThat(dotFile)
 			.isEqualTo(dotFile("simple.dot"));
+	}
+
+
+	@Test
+	void subGraphAsDot() {
+		DefaultDirectedGraph<Vertex, DefaultEdge> sub = Graphs.with(Graphs.graphBuilder(Graphs.directedGraph(Vertex.class, DefaultEdge.class)))
+			.build(builder -> {
+				Vertex.Named x = Vertex.Named.of("x");
+				Vertex.Named y = Vertex.Named.of("y");
+				Vertex.Named z = Vertex.Named.of("z");
+				builder.addVertices(x, y, z);
+				builder.addEdge(x, y);
+				builder.addEdge(y, z);
+			});
+
+		DefaultDirectedGraph<Vertex, DefaultEdge> graph = Graphs.with(Graphs.graphBuilder(Graphs.directedGraph(Vertex.class, DefaultEdge.class)))
+			.build(builder -> {
+				Vertex.Named a = Vertex.Named.of("A");
+				Vertex.WithGraph b = Vertex.WithGraph.of("B", sub);
+				Vertex.Named c = Vertex.Named.of("C");
+
+				builder.addVertices(a, b, c);
+				builder.addEdge(a, b);
+				builder.addEdge(c, b);
+				
+			});
+
+		String dotFile = GraphAsDot.<Vertex>builder(Vertex::name)
+			.subGraph(v -> v instanceof Vertex.WithGraph
+				? Optional.of(GraphAsDot.SubGraph.of(((Vertex.WithGraph) v).graph())
+				.build())
+				: Optional.empty())
+			.build()
+			.asDot(graph);
+
+		assertThat(dotFile)
+			.isEqualTo(dotFile("subgraph.dot"));
 	}
 
 	private static String dotFile(String name) {

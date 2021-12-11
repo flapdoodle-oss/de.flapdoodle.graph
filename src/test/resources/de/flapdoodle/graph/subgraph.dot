@@ -1,22 +1,39 @@
 digraph "graph" {
 	rankdir=LR;
 
-	"A";
-	"B.in";
+	"A#0"[ label="A" ];
+	"C#1"[ label="C" ];
+	"One.in#2"[ label="One.in" ];
 	subgraph cluster_0 {
-		label = "B";
-		"x";
-		"y";
-		"z";
+		label = "One";
+		node [ label="One" ];
+		"x#3"[ label="x" ];
+		"y#4"[ label="y" ];
+		"z#5"[ label="z" ];
 
-		"x" -> "y";
-		"y" -> "z";
+		"x#3" -> "y#4";
+		"y#4" -> "z#5";
 	}
-	"B.out";
-	"C";
+	"One.out#6"[ label="One.out" ];
+	"Other.in#7"[ label="Other.in" ];
+	subgraph cluster_1 {
+		label = "Other";
+		"x#8"[ label="x" ];
+		"y#9"[ label="y" ];
+		"z#10"[ label="z" ];
 
-	"A" -> "B.in";
-	"B.in" -> "x";
-	"z" -> "B.out";
-	"B.out" -> "C";
+		"x#8" -> "y#9";
+		"y#9" -> "z#10";
+	}
+	"Other.out#11"[ label="Other.out" ];
+
+	"A#0" -> "One.in#2";
+	"One.in#2" -> "x#3";
+	"z#5" -> "One.out#6";
+	"One.out#6" -> "C#1";
+	"A#0" -> "Other.in#7";
+	"Other.in#7" -> "x#8";
+	"z#10" -> "Other.out#11";
+	"Other.out#11" -> "C#1";
+	"A#0" -> "C#1";
 }

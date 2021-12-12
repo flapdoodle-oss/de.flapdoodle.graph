@@ -238,7 +238,7 @@ public abstract class GraphAsDot<T> {
 			Optional<Context<T>.Render<?>> subContext = context.subGraph(v);
 			if (subContext.isPresent()) {
 				context.line("subgraph cluster_" + subContext.get().clusterId + " {");
-				subContext.get().line("label = "+context.context.root.nodeAsLabel().apply(v)+";");
+				subContext.get().line("label = "+quote(context.context.root.nodeAsLabel().apply(v))+";");
 				render(subContext.get());
 				context.line("}");
 			} else {

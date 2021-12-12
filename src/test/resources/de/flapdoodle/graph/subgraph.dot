@@ -5,7 +5,7 @@ digraph "graph" {
 	"C";
 	"One.in";
 	subgraph cluster_1 {
-		label = One;
+		label = "One";
 		"One:x"[ label="x" ];
 		"One:y"[ label="y" ];
 		"One:z"[ label="z" ];
@@ -16,7 +16,7 @@ digraph "graph" {
 	"One.out";
 	"Other.in";
 	subgraph cluster_2 {
-		label = Other;
+		label = "Other";
 		"Other:x"[ label="x" ];
 		"Other:y"[ label="y" ];
 		"Other:z"[ label="z" ];

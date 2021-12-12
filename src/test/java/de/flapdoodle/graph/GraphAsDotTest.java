@@ -133,7 +133,8 @@ class GraphAsDotTest {
 				}
 				return Optional.empty();
 			})
-			.nodeAttributes(vertex -> mapOf("label", vertex.name()))
+			.nodeAsLabel(Vertex::name)
+			//.nodeAttributes(vertex -> mapOf("label", vertex.name()))
 			.build()
 			.asDot(graph);
 

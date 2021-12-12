@@ -22,10 +22,7 @@ import org.immutables.value.Value.Auxiliary;
 import org.immutables.value.Value.Default;
 import org.jgrapht.Graph;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -206,7 +203,18 @@ public abstract class GraphAsDot<T> {
 			}
 
 			public void renderNode(T v) {
-				line(quote(clusterPrefix+context.root.nodeAsId().apply(v)) + asNodeAttributes(context.root.nodeAttributes().apply(v)) + ";");
+				String id = clusterPrefix + context.root.nodeAsId().apply(v);
+				String label = context.root.nodeAsLabel().apply(v);
+				Map<String, String> attributes = context.root.nodeAttributes().apply(v);
+				line(quote(id) + asNodeAttributes(id.equals(label) ? attributes : withLabel(attributes, label)) + ";");
+			}
+
+			private Map<String, String> withLabel(Map<String, String> attributes, String label) {
+				LinkedHashMap<String, String> copy = new LinkedHashMap<>(attributes);
+				if (!copy.containsKey("label")) {
+					copy.put("label", label);
+				}
+				return copy;
 			}
 
 			private void renderConnection(String a, String b, Map<String, String> edgeAttributes, StringBuilder sb) {
@@ -230,6 +238,7 @@ public abstract class GraphAsDot<T> {
 			Optional<Context<T>.Render<?>> subContext = context.subGraph(v);
 			if (subContext.isPresent()) {
 				context.line("subgraph cluster_" + subContext.get().clusterId + " {");
+				subContext.get().line("label = "+context.context.root.nodeAsLabel().apply(v)+";");
 				render(subContext.get());
 				context.line("}");
 			} else {

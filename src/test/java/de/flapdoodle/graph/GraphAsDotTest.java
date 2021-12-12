@@ -122,7 +122,7 @@ class GraphAsDotTest {
 				builder.addEdge(a, c);
 			});
 
-		String dotFile = GraphAsDot.<Vertex>builder(nameAndCounter())
+		String dotFile = GraphAsDot.<Vertex>builder(Vertex::name)
 			.subGraph(v -> {
 				if (v instanceof Vertex.WithGraph) {
 					Vertex.WithGraph withGraph = (Vertex.WithGraph) v;

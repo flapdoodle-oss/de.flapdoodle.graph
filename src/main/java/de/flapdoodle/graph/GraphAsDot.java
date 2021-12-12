@@ -27,7 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -37,6 +39,11 @@ public abstract class GraphAsDot<T> {
 
 	@Parameter
 	public abstract Function<T, String> nodeAsId();
+
+	@Default
+	public String subGraphIdSeparator() {
+		return ":";
+	}
 
 	@Default
 	public Function<T, String> nodeAsLabel() {
@@ -71,94 +78,174 @@ public abstract class GraphAsDot<T> {
 			.append("	rankdir=LR;\n")
 			.append("\n");
 
-		AtomicInteger clusterCounter = new AtomicInteger();
-
-		render(1, graph, sb, clusterCounter);
+		Context<T> context = new Context<>(this, sb);
+		render(context.render(graph, 1));
 
 		sb.append("}\n");
 		return sb.toString();
 	}
 
-	// TODO put this stuff into context
-	private <E> void render(int level, Graph<T, E> graph, StringBuilder sb, AtomicInteger clusterCounter) {
-		renderNodes(level, graph, sb, clusterCounter);
-		sb.append("\n");
+	private static class Context<T> {
+		private final GraphAsDot<T> root;
+		private final StringBuilder sb;
+		private final AtomicInteger clusterCounter = new AtomicInteger();
 
-		List<Vertex2SubGraph<T>> subGraphs = graph.vertexSet().stream()
-			.flatMap(v -> subGraph().apply(v)
-				.map(Stream::of)
-				.orElse(Stream.empty())
-				.map(sub -> new Vertex2SubGraph<>(v, sub)))
-			.collect(Collectors.toList());
+		public Context(GraphAsDot<T> root, StringBuilder sb) {
+			this.root = root;
+			this.sb = sb;
+		}
 
-		List<Vertext2VertexInSubGraph<T>> outerVertexToInnerVertexList = subGraphs.stream()
-			.flatMap(sub -> sub.subGraph.connections().entrySet().stream()
-				.map(entry -> new Vertext2VertexInSubGraph<>(
-					entry.getKey(), new VertexInSubGraph<>(sub.vertext, entry.getValue()))
-				)
-			)
-			.collect(Collectors.toList());
+		public <E> Render<E> render(Graph<T, E> graph, int level) {
+			return new Render<>(this, graph, level, "");
+		}
 
-		Map<T, VertexInSubGraph<T>> outerVertexToInnerVertexMap = outerVertexToInnerVertexList.stream()
-			.collect(Collectors.toMap(v -> v.vertex, v -> v.vertexInSubGraph));
+		private class Render<E> {
 
-		renderEdges(level, graph, outerVertexToInnerVertexMap, sb);
-	}
+			private final Context<T> context;
+			private final Graph<T, E> graph;
+			private final int level;
 
-	private <E> void renderNodes(int level, Graph<T, E> graph, StringBuilder sb, AtomicInteger clusterCounter) {
-		graph.vertexSet().forEach(v -> {
-			Map<String, String> nodeAttributes = nodeAttributes().apply(v);
+			private final Map<T, VertexInSubGraph<T>> outerVertexToInnerVertexMap;
+			private final int clusterId;
+			private final String clusterPrefix;
+			private final String indent;
 
-			Optional<SubGraph<T>> subGraph = subGraph().apply(v);
-			if (subGraph.isPresent()) {
-				sb.append(indent(level)).append("subgraph cluster_" + clusterCounter.getAndIncrement() + " {\n");
-				if (!nodeAttributes.isEmpty()) {
-					sb.append(indent(level + 1)).append("node ").append(asNodeAttributes(nodeAttributes)).append(";\n");
-				}
+			private Render(
+				Context<T> context,
+				Graph<T, E> graph,
+				int level,
+				String clusterPrefix
+			) {
+				this.context = context;
+				this.graph = graph;
+				this.level = level;
+				this.clusterPrefix = clusterPrefix;
+				this.clusterId = context.clusterCounter.getAndIncrement();
+				this.indent = String.join("", Collections.nCopies(level, "\t"));
 
-				render(level + 1, subGraph.get().graph(), sb, clusterCounter);
-				sb.append(indent(level)).append("}\n");
-			} else {
-				sb.append(indent(level)).append(quote(nodeAsId().apply(v))).append(asNodeAttributes(nodeAttributes)).append(";\n");
+				List<Vertex2SubGraph<T>> subGraphs = graph.vertexSet().stream()
+					.flatMap(v -> context.root.subGraph().apply(v)
+						.map(Stream::of)
+						.orElse(Stream.empty())
+						.map(sub -> new Vertex2SubGraph<>(v, sub)))
+					.collect(Collectors.toList());
+
+				List<Vertext2VertexInSubGraph<T>> outerVertexToInnerVertexList = subGraphs.stream()
+					.flatMap(sub -> sub.subGraph.connections().entrySet().stream()
+						.map(entry -> new Vertext2VertexInSubGraph<>(
+							entry.getKey(), new VertexInSubGraph<>(sub.vertext, entry.getValue()))
+						)
+					)
+					.collect(Collectors.toList());
+
+				this.outerVertexToInnerVertexMap = outerVertexToInnerVertexList.stream()
+					.collect(Collectors.toMap(v -> v.vertex, v -> v.vertexInSubGraph));
 			}
-		});
-	}
 
-	private <E> void renderEdges(int level, Graph<T, E> graph, Map<T, VertexInSubGraph<T>> outerVertexToInnerVertexMap, StringBuilder sb) {
-		graph.edgeSet().forEach((edge) -> {
-			T a = graph.getEdgeSource(edge);
-			T b = graph.getEdgeTarget(edge);
+			public Optional<Render<?>> subGraph(T v) {
+				Optional<SubGraph<T>> subGraph = context.root.subGraph().apply(v);
+				return subGraph.map(sg -> subGraph(sg.graph(), clusterPrefix(v)));
+			}
 
-			VertexInSubGraph<T> innerA = outerVertexToInnerVertexMap.get(a);
-			VertexInSubGraph<T> innerB = outerVertexToInnerVertexMap.get(b);
+			private String clusterPrefix(T cluster) {
+				String separator = context.root.subGraphIdSeparator();
+				String localPrefix = context.root.nodeAsId().apply(cluster);
+				return clusterPrefix.isEmpty() ? localPrefix+separator : clusterPrefix+localPrefix+separator;
+			}
 
-			if (!subGraph().apply(a).isPresent() && !subGraph().apply(b).isPresent()) {
-				renderConnection(level, a, b, sb);
-			} else {
+			private <X> Render<X> subGraph(Graph<T, X> subGraph, String prefix) {
+				return new Render<>(context, subGraph, level + 1, prefix);
+			}
+
+			public void newLine() {
+				sb.append("\n");
+			}
+
+			public Render<E> line(String content) {
+				sb.append(indent).append(content).append("\n");
+				return this;
+			}
+
+			public void forEachEdge(BiConsumer<T, T> onEdge) {
+				graph.edgeSet().forEach(edge -> {
+					T start = graph.getEdgeSource(edge);
+					T end = graph.getEdgeTarget(edge);
+					onEdge.accept(start, end);
+				});
+			}
+
+			public boolean isNoSubGraph(T vertex) {
+				return !context.root.subGraph().apply(vertex).isPresent();
+			}
+
+			private Render<E> connection(T a, T b) {
+				renderConnection(clusterPrefix+root.nodeAsId().apply(a), clusterPrefix+root.nodeAsId().apply(b), root.edgeAttributes().apply(a, b), sb);
+				return this;
+			}
+
+			public void subGraphConnection(T a, T b) {
+				VertexInSubGraph<T> innerA = outerVertexToInnerVertexMap.get(a);
+				VertexInSubGraph<T> innerB = outerVertexToInnerVertexMap.get(b);
+
 				if (innerA != null) {
-					renderConnection(level, nodeAsId().apply(a), nodeAsId().apply(innerA.vertex), edgeAttributes().apply(a, innerA.vertex),  sb);
+					String aId=clusterPrefix+root.nodeAsId().apply(a);
+					String innerAId=clusterPrefix(innerA.parent)+root.nodeAsId().apply(innerA.vertex);
+					renderConnection(aId, innerAId, root.edgeAttributes().apply(a, innerA.vertex), sb);
 				}
 				if (innerB != null) {
-					renderConnection(level, nodeAsId().apply(innerB.vertex), nodeAsId().apply(b), edgeAttributes().apply(innerB.vertex, b), sb);
+					String innerBId=clusterPrefix(innerB.parent)+root.nodeAsId().apply(innerB.vertex);
+					String bId=clusterPrefix+root.nodeAsId().apply(b);
+
+					renderConnection(innerBId, bId, root.edgeAttributes().apply(innerB.vertex, b), sb);
 				}
+
+			}
+
+			public void forEachVertex(Consumer<T> onVertex) {
+				graph.vertexSet().forEach(onVertex);
+			}
+
+			public void renderNode(T v) {
+				line(quote(clusterPrefix+context.root.nodeAsId().apply(v)) + asNodeAttributes(context.root.nodeAttributes().apply(v)) + ";");
+			}
+
+			private void renderConnection(String a, String b, Map<String, String> edgeAttributes, StringBuilder sb) {
+				sb.append(indent);
+				sb.append(quote(a))
+					.append(" -> ")
+					.append(quote(b))
+					.append(asNodeAttributes(edgeAttributes)).append(";\n");
+			}
+		}
+	}
+
+	private <E> void render(Context<T>.Render<E> context) {
+		renderNodes(context);
+		context.newLine();
+		renderEdges(context);
+	}
+
+	private <E> void renderNodes(Context<T>.Render<E> context) {
+		context.forEachVertex(v -> {
+			Optional<Context<T>.Render<?>> subContext = context.subGraph(v);
+			if (subContext.isPresent()) {
+				context.line("subgraph cluster_" + subContext.get().clusterId + " {");
+				render(subContext.get());
+				context.line("}");
+			} else {
+				context.renderNode(v);
 			}
 		});
 	}
 
-	private void renderConnection(int level, T a, T b, StringBuilder sb) {
-		renderConnection(level, nodeAsId().apply(a), nodeAsId().apply(b), edgeAttributes().apply(a, b), sb);
-	}
-
-	private static void renderConnection(int level, String a, String b, Map<String, String> edgeAttributes, StringBuilder sb) {
-		sb.append(indent(level));
-		sb.append(quote(a))
-			.append(" -> ")
-			.append(quote(b))
-			.append(asNodeAttributes(edgeAttributes)).append(";\n");
-	}
-
-	private static String indent(int level) {
-		return String.join("", Collections.nCopies(level, "\t"));
+	private <E> void renderEdges(Context<T>.Render<E> context) {
+		context.forEachEdge((a, b) -> {
+			if (context.isNoSubGraph(a) && context.isNoSubGraph(b)) {
+				context.connection(a, b);
+			} else {
+				context.subGraphConnection(a, b);
+			}
+		});
 	}
 
 	private static String asNodeAttributes(Map<String, String> map) {

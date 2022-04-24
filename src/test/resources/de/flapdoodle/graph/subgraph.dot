@@ -3,7 +3,6 @@ digraph "graph" {
 
 	"A";
 	"C";
-	"One.in";
 	subgraph cluster_1 {
 		label = "One";
 		"One:x"[ label="x" ];
@@ -13,8 +12,8 @@ digraph "graph" {
 		"One:x" -> "One:y";
 		"One:y" -> "One:z";
 	}
+	"One.in";
 	"One.out";
-	"Other.in";
 	subgraph cluster_2 {
 		label = "Other";
 		"Other:x"[ label="x" ];
@@ -24,15 +23,16 @@ digraph "graph" {
 		"Other:x" -> "Other:y";
 		"Other:y" -> "Other:z";
 	}
+	"Other.in";
 	"Other.out";
 
-	"A" -> "One.in";
-	"One.in" -> "One:x";
-	"One:z" -> "One.out";
-	"One.out" -> "C";
-	"A" -> "Other.in";
-	"Other.in" -> "Other:x";
-	"Other:z" -> "Other.out";
-	"Other.out" -> "C";
 	"A" -> "C";
+	"A" -> "One.in";
+	"A" -> "Other.in";
+	"One:z" -> "One.out";
+	"One.in" -> "One:x";
+	"One.out" -> "C";
+	"Other:z" -> "Other.out";
+	"Other.in" -> "Other:x";
+	"Other.out" -> "C";
 }

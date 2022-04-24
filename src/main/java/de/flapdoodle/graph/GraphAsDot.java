@@ -61,6 +61,8 @@ public abstract class GraphAsDot<T> {
 	public Function<T, Optional<SubGraph<T>>> subGraph() {
 		return (a) -> Optional.empty();
 	}
+	
+	public abstract Optional<AsComparable<T, ?>> sortedBy();
 
 	@Default
 	public String label() {
@@ -164,11 +166,18 @@ public abstract class GraphAsDot<T> {
 			}
 
 			public void forEachEdge(BiConsumer<T, T> onEdge) {
-				graph.edgeSet().forEach(edge -> {
+				Consumer<E> edgeConsumer = edge -> {
 					T start = graph.getEdgeSource(edge);
 					T end = graph.getEdgeTarget(edge);
 					onEdge.accept(start, end);
-				});
+				};
+
+				if (root.sortedBy().isPresent()) {
+					graph.edgeSet().stream()
+						.sorted(new MappingEdgeComparator<>(graph, root.sortedBy().get()))
+						.forEach(edgeConsumer);
+				} else graph.edgeSet()
+					.forEach(edgeConsumer);
 			}
 
 			public boolean isNoSubGraph(T vertex) {
@@ -199,7 +208,13 @@ public abstract class GraphAsDot<T> {
 			}
 
 			public void forEachVertex(Consumer<T> onVertex) {
-				graph.vertexSet().forEach(onVertex);
+				if (root.sortedBy().isPresent()) {
+					graph.vertexSet().stream()
+						.sorted(new MappingComparator<>(root.sortedBy().get()))
+						.forEach(onVertex);
+				} else
+					graph.vertexSet()
+						.forEach(onVertex);
 			}
 
 			public void renderNode(T v) {
@@ -311,5 +326,44 @@ public abstract class GraphAsDot<T> {
 
 	public static <T> ImmutableGraphAsDot.Builder<T> builder(Function<T, String> nodeAsId) {
 		return ImmutableGraphAsDot.builder(nodeAsId);
+	}
+
+	@FunctionalInterface
+	public interface AsComparable<T, C extends Comparable<C>> {
+		C map(T value);
+	}
+
+	private static class MappingComparator<T, C extends Comparable<C>> implements Comparator<T> {
+
+		private final AsComparable<T, C> mapping;
+
+		private MappingComparator(AsComparable<T, C> mapping) {
+			this.mapping = mapping;
+		}
+
+		@Override
+		public int compare(T first, T second) {
+			return mapping.map(first).compareTo(mapping.map(second));
+		}
+	}
+
+	private static class MappingEdgeComparator<T, E, C extends Comparable<C>> implements Comparator<E> {
+
+		private final Graph<T, E> graph;
+		private final MappingComparator<T, C> comparator;
+
+		public MappingEdgeComparator(Graph<T, E> graph, AsComparable<T, C> asComparable) {
+			this.graph = graph;
+			this.comparator = new MappingComparator<>(asComparable);
+		}
+
+		@Override
+		public int compare(E first, E second) {
+			int compareFirst = comparator.compare(graph.getEdgeSource(first), graph.getEdgeSource(second));
+
+			return compareFirst == 0
+				? comparator.compare(graph.getEdgeTarget(first), graph.getEdgeTarget(second))
+				: compareFirst;
+		}
 	}
 }

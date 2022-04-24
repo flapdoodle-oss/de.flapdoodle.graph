@@ -135,6 +135,7 @@ class GraphAsDotTest {
 			})
 			.nodeAsLabel(Vertex::name)
 			//.nodeAttributes(vertex -> mapOf("label", vertex.name()))
+			.sortedBy((GraphAsDot.AsComparable<Vertex, String>) Vertex::name)
 			.build()
 			.asDot(graph);
 

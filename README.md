@@ -15,12 +15,3 @@ Stable (Maven Central Repository, Released: 24.04.2022 - wait 24hrs for [maven c
 		<artifactId>de.flapdoodle.graph</artifactId>
 		<version>1.2.3</version>
 	</dependency>
-
-Snapshots (Repository http://oss.sonatype.org/content/repositories/snapshots)
-
-	<dependency>
-		<groupId>de.flapdoodle.graph</groupId>
-		<artifactId>de.flapdoodle.graph</artifactId>
-		<version>1.2.4-SNAPSHOT</version>
-	</dependency>
-

@@ -40,7 +40,7 @@ class GraphAsDotTest {
 
 	@Test
 	void simpleGraphAsDot() {
-		DefaultDirectedGraph<String, DefaultEdge> graph = Graphs.with(Graphs.graphBuilder(Graphs.directedGraph(String.class, DefaultEdge.class)))
+		DefaultDirectedGraph<String, DefaultEdge> graph = Graphs.with(Graphs.graphBuilder(Graphs.directedGraphFactory(String.class, DefaultEdge.class)))
 			.build(builder -> {
 				builder.addVertices("A","B","C");
 				builder.addEdge("A","B");
@@ -61,7 +61,7 @@ class GraphAsDotTest {
 		Vertex.Named oneX = Vertex.Named.of("x");
 		Vertex.Named oneZ = Vertex.Named.of("z");
 
-		DefaultDirectedGraph<Vertex, DefaultEdge> oneSub = Graphs.with(Graphs.graphBuilder(Graphs.directedGraph(Vertex.class, DefaultEdge.class)))
+		DefaultDirectedGraph<Vertex, DefaultEdge> oneSub = Graphs.with(Graphs.graphBuilder(Graphs.directedGraphFactory(Vertex.class, DefaultEdge.class)))
 			.build(builder -> {
 				Vertex.Named x = oneX;
 				Vertex.Named y = Vertex.Named.of("y");
@@ -74,7 +74,7 @@ class GraphAsDotTest {
 		Vertex.Named otherX = Vertex.Named.of("x");
 		Vertex.Named otherZ = Vertex.Named.of("z");
 
-		DefaultDirectedGraph<Vertex, DefaultEdge> otherSub = Graphs.with(Graphs.graphBuilder(Graphs.directedGraph(Vertex.class, DefaultEdge.class)))
+		DefaultDirectedGraph<Vertex, DefaultEdge> otherSub = Graphs.with(Graphs.graphBuilder(Graphs.directedGraphFactory(Vertex.class, DefaultEdge.class)))
 			.build(builder -> {
 				Vertex.Named x = otherX;
 				Vertex.Named y = Vertex.Named.of("y");
@@ -98,7 +98,7 @@ class GraphAsDotTest {
 			.putConnections(Vertex.Named.of("Other.out"), otherZ)
 			.build();
 
-		DefaultDirectedGraph<Vertex, DefaultEdge> graph = Graphs.with(Graphs.graphBuilder(Graphs.directedGraph(Vertex.class, DefaultEdge.class)))
+		DefaultDirectedGraph<Vertex, DefaultEdge> graph = Graphs.with(Graphs.graphBuilder(Graphs.directedGraphFactory(Vertex.class, DefaultEdge.class)))
 			.build(builder -> {
 				Vertex.Named a = Vertex.Named.of("A");
 				Vertex.WithGraph one = oneSubGraph;

@@ -38,7 +38,7 @@ public class GraphsTest {
 		List<Integer> src = Stream.of(1,2,3,4,5,6,7)
 				.collect(Collectors.toList());
 		
-		DefaultDirectedGraph<Integer, DefaultEdge> graph = Graphs.with(Graphs.graphBuilder(Graphs.directedGraph(Integer.class, DefaultEdge.class)))
+		DefaultDirectedGraph<Integer, DefaultEdge> graph = Graphs.with(Graphs.graphBuilder(Graphs.directedGraphFactory(Integer.class, DefaultEdge.class)))
 				.build(src, (graphBuilder,b) -> {
 					graphBuilder.addVertex(b);
 					if (!b.equals(1)) {
@@ -57,7 +57,7 @@ public class GraphsTest {
 	
 	@Test
 	public void collectionOfLeaves() {
-		DefaultDirectedGraph<String, DefaultEdge> graph = Graphs.with(Graphs.graphBuilder(Graphs.directedGraph(String.class, DefaultEdge.class)))
+		DefaultDirectedGraph<String, DefaultEdge> graph = Graphs.with(Graphs.graphBuilder(Graphs.directedGraphFactory(String.class, DefaultEdge.class)))
 			.build(builder -> {
 				builder.addVertices("A","B","C","Ca","D","Da","Db","Dc");
 				builder.addEdgeChain("A", "B", "C", "D");
@@ -96,7 +96,7 @@ public class GraphsTest {
 	
 	@Test
 	public void collectionOfLeavesWithCycles() {
-		DefaultDirectedGraph<String, DefaultEdge> graph = Graphs.with(Graphs.graphBuilder(Graphs.directedGraph(String.class, DefaultEdge.class)))
+		DefaultDirectedGraph<String, DefaultEdge> graph = Graphs.with(Graphs.graphBuilder(Graphs.directedGraphFactory(String.class, DefaultEdge.class)))
 			.build(builder -> {
 				builder.addVertices("A","B","C","Ca","D","Da","Db","Dc");
 				builder.addEdgeChain("A", "B", "C", "D");
@@ -136,7 +136,7 @@ public class GraphsTest {
 	
 	@Test
 	public void collectionOfRoots() {
-		DefaultDirectedGraph<String, DefaultEdge> graph = Graphs.with(Graphs.graphBuilder(Graphs.directedGraph(String.class, DefaultEdge.class)))
+		DefaultDirectedGraph<String, DefaultEdge> graph = Graphs.with(Graphs.graphBuilder(Graphs.directedGraphFactory(String.class, DefaultEdge.class)))
 			.build(builder -> {
 				builder.addVertices("A","B","C","Ca","D","Da","Db","Dc");
 				builder.addEdgeChain("A", "B", "C", "D");
@@ -177,7 +177,7 @@ public class GraphsTest {
 
 	@Test
 	public void collectionOfRootsWithCycles() {
-		DefaultDirectedGraph<String, DefaultEdge> graph = Graphs.with(Graphs.graphBuilder(Graphs.directedGraph(String.class, DefaultEdge.class)))
+		DefaultDirectedGraph<String, DefaultEdge> graph = Graphs.with(Graphs.graphBuilder(Graphs.directedGraphFactory(String.class, DefaultEdge.class)))
 			.build(builder -> {
 				builder.addVertices("A","B","C","Ca","D","Da","Db","Dc");
 				builder.addEdgeChain("A", "B", "C", "D");
@@ -218,7 +218,7 @@ public class GraphsTest {
 	
 	@Test
 	public void graphBuilder() {
-		DefaultDirectedGraph<String, DefaultEdge> graph = Graphs.with(Graphs.graphBuilder(Graphs.directedGraph(String.class, DefaultEdge.class)))
+		DefaultDirectedGraph<String, DefaultEdge> graph = Graphs.with(Graphs.graphBuilder(Graphs.directedGraphFactory(String.class, DefaultEdge.class)))
 			.build(builder -> {
 				builder.addVertices("A","B","C","Ca","D","Da","Db","Dc");
 				builder.addEdgeChain("A", "B", "C", "D");
@@ -233,7 +233,7 @@ public class GraphsTest {
 	
 	@Test
 	public void isShortestPathIsDirected() {
-		DefaultDirectedGraph<String, DefaultEdge> graph = Graphs.with(Graphs.graphBuilder(Graphs.directedGraph(String.class, DefaultEdge.class)))
+		DefaultDirectedGraph<String, DefaultEdge> graph = Graphs.with(Graphs.graphBuilder(Graphs.directedGraphFactory(String.class, DefaultEdge.class)))
 				.build(builder -> {
 					builder.addVertices("A","B","C");
 					builder.addEdge("A","B");

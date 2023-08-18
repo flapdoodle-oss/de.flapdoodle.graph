@@ -13,5 +13,5 @@ Stable (Maven Central Repository, Released: 18.08.2023 - wait 24hrs for [maven c
 	<dependency>
 		<groupId>de.flapdoodle.graph</groupId>
 		<artifactId>de.flapdoodle.graph</artifactId>
-		<version>1.3.0</version>
+		<version>1.3.2</version>
 	</dependency>

@@ -190,6 +190,12 @@ public abstract class GraphAsDot<T> {
 			}
 
 			public void subGraphConnection(T a, T b) {
+//				System.out.println("subGraphConnection -> "+a+" --> "+b);
+//				outerVertexToInnerVertexMap.forEach((key, value) -> {
+//					System.out.println(key);
+//					System.out.println("--> "+value);
+//				});
+				
 				VertexInSubGraph<T> innerA = outerVertexToInnerVertexMap.get(a);
 				VertexInSubGraph<T> innerB = outerVertexToInnerVertexMap.get(b);
 
@@ -204,7 +210,7 @@ public abstract class GraphAsDot<T> {
 
 					renderConnection(innerBId, bId, root.edgeAttributes().apply(innerB.vertex, b), sb);
 				}
-
+				if (innerA==null && innerB==null) throw new IllegalArgumentException("could not find mapping for "+a+" or "+b+" in "+outerVertexToInnerVertexMap);
 			}
 
 			public void forEachVertex(Consumer<T> onVertex) {
@@ -321,6 +327,14 @@ public abstract class GraphAsDot<T> {
 		public VertexInSubGraph(T parent, T vertex) {
 			this.parent = parent;
 			this.vertex = vertex;
+		}
+
+		@Override
+		public String toString() {
+			return "VertexInSubGraph{" +
+				"parent=" + parent +
+				", vertex=" + vertex +
+				'}';
 		}
 	}
 

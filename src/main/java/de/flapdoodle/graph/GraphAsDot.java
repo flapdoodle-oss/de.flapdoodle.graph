@@ -62,7 +62,7 @@ public abstract class GraphAsDot<T> {
 		return (a) -> Optional.empty();
 	}
 	
-	public abstract Optional<AsComparable<T, ?>> sortedBy();
+	public abstract Optional<Function<T, Comparable>> sortedBy();
 
 	@Default
 	public String label() {
@@ -343,21 +343,21 @@ public abstract class GraphAsDot<T> {
 	}
 
 	@FunctionalInterface
-	public interface AsComparable<T, C extends Comparable<C>> {
-		C map(T value);
+	public interface AsComparable<T, C extends Comparable<C>> extends Function<T, C> {
+		
 	}
 
 	private static class MappingComparator<T, C extends Comparable<C>> implements Comparator<T> {
 
-		private final AsComparable<T, C> mapping;
+		private final Function<T, C> mapping;
 
-		private MappingComparator(AsComparable<T, C> mapping) {
+		private MappingComparator(Function<T, C> mapping) {
 			this.mapping = mapping;
 		}
 
 		@Override
 		public int compare(T first, T second) {
-			return mapping.map(first).compareTo(mapping.map(second));
+			return mapping.apply(first).compareTo(mapping.apply(second));
 		}
 	}
 
@@ -366,7 +366,7 @@ public abstract class GraphAsDot<T> {
 		private final Graph<T, E> graph;
 		private final MappingComparator<T, C> comparator;
 
-		public MappingEdgeComparator(Graph<T, E> graph, AsComparable<T, C> asComparable) {
+		public MappingEdgeComparator(Graph<T, E> graph, Function<T, C> asComparable) {
 			this.graph = graph;
 			this.comparator = new MappingComparator<>(asComparable);
 		}

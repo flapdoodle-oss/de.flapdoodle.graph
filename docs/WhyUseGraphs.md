@@ -40,7 +40,7 @@ String dotFile = GraphAsDot.builder(Base::name)
   .label("label")
   .nodeAsLabel(vertex -> "label " + vertex.name())
   .nodeAttributes(vertex -> asMap("shape", "rectangle"))
-  .sortedBy((GraphAsDot.AsComparable<Base, String>) Base::name)
+  .sortedBy(Base::name)
   .subGraph(vertex -> vertex instanceof Embedded
     ? Optional.of(((Embedded) vertex).subGraph())
     : Optional.empty())

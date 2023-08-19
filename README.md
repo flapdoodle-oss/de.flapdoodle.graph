@@ -8,12 +8,12 @@ graph stuff
 
 ### Maven
 
-Stable (Maven Central Repository, Released: 18.08.2023 - wait 24hrs for [maven central](http://repo1.maven.org/maven2/de/flapdoodle/guava/de.flapdoodle.graph/maven-metadata.xml))
+Stable (Maven Central Repository, Released: 19.08.2023 - wait 24hrs for [maven central](http://repo1.maven.org/maven2/de/flapdoodle/guava/de.flapdoodle.graph/maven-metadata.xml))
 
 	<dependency>
 		<groupId>de.flapdoodle.graph</groupId>
 		<artifactId>de.flapdoodle.graph</artifactId>
-		<version>1.3.2</version>
+		<version>1.3.3</version>
 	</dependency>
 
 ### HowTo

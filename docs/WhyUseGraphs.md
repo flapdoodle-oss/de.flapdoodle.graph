@@ -72,4 +72,95 @@ digraph "label" {
 
 which looks like this:
 
-![Example-Dot](WhyUseGraphs.svg)
+![Simple Graph](WhyUseGraphs.svg)
+                         
+## Walk the Graph
+
+Given a sample graph
+
+![Sample](WhyUseGraphs-Sample.svg)
+                                       
+you can filter the graph:
+
+```java
+DefaultDirectedGraph<String, DefaultEdge> graph = sample();
+
+DefaultDirectedGraph<String, DefaultEdge> filtered = Graphs.filter(graph, it -> !it.equals("2"));
+```
+
+![Filtered](WhyUseGraphs-Filter.svg)
+
+you can traverse the graph starting with leaves:
+
+```java
+DefaultDirectedGraph<String, DefaultEdge> graph = sample();
+List<VerticesAndEdges<String, DefaultEdge>> leaves = Graphs.leavesOf(graph);
+
+assertThat(leaves).hasSize(5);
+
+VerticesAndEdgesAssert.assertThat(leaves.get(0))
+  .containsVertices("d", "Y")
+  .containsEdges("c->d", "2->d", "X->Y")
+  .hasLoops(0);
+
+VerticesAndEdgesAssert.assertThat(leaves.get(1))
+  .containsVertices("c", "2")
+  .containsEdges("b->c", "1->2", "b->2")
+  .hasLoops(0);
+
+VerticesAndEdgesAssert.assertThat(leaves.get(2))
+  .containsVertices("b")
+  .containsEdges("a->b", "0->b")
+  .hasLoops(0);
+
+VerticesAndEdgesAssert.assertThat(leaves.get(3))
+  .containsVertices("0")
+  .containsEdges()
+  .hasLoops(0);
+
+VerticesAndEdgesAssert.assertThat(leaves.get(4))
+  .containsVertices("a", "1", "X")
+  .containsEdges()
+  .hasLoops(1)
+  .containsLoop("1->X", "X->a","a->1");
+```
+
+![Shave The Tree](WhyUseGraphs-ShaveTheTree.svg)
+
+or the roots:
+
+```java
+DefaultDirectedGraph<String, DefaultEdge> graph = sample();
+List<VerticesAndEdges<String, DefaultEdge>> roots = Graphs.rootsOf(graph);
+
+assertThat(roots).hasSize(5);
+
+VerticesAndEdgesAssert.assertThat(roots.get(0))
+  .containsVertices("0")
+  .containsEdges("0->b")
+  .hasLoops(0);
+
+VerticesAndEdgesAssert.assertThat(roots.get(1))
+  .containsVertices("a", "1", "X")
+  .containsEdges()
+  .hasLoops(1)
+  .containsLoop("1->X", "X->a","a->1");
+
+VerticesAndEdgesAssert.assertThat(roots.get(2))
+  .containsVertices("b", "Y")
+  .containsEdges("b->c", "b->2")
+  .hasLoops(0);
+
+VerticesAndEdgesAssert.assertThat(roots.get(3))
+  .containsVertices("c", "2")
+  .containsEdges("c->d", "2->d")
+  .hasLoops(0);
+
+VerticesAndEdgesAssert.assertThat(roots.get(4))
+  .containsVertices("d")
+  .containsEdges()
+  .hasLoops(0);
+
+```
+
+![Climb The Tree](WhyUseGraphs-ClimbTheTree.svg)

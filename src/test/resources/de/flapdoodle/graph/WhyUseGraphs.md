@@ -25,9 +25,40 @@ ${simpleGraph.dotFile}
 ```
 
 ```dot
-${simpleGraph.copy-file.dot}
+${simpleGraph.graph.dot}
 ```
 
 which looks like this:
 
-![Example-Dot](${simpleGraph.copy-file.dot.svg})
+![Simple Graph](${simpleGraph.graph.dot.svg})
+                         
+## Walk the Graph
+
+Given a sample graph
+
+![Sample](${sampleGraph.graph.dot.svg})
+                                       
+you can filter the graph:
+
+```java
+${filter}
+```
+
+![Filtered](${filter.graph.dot.svg})
+
+you can traverse the graph starting with leaves:
+
+```java
+${shaveTheTree}
+```
+
+![Shave The Tree](${shaveTheTree.graph.dot.svg})
+
+or the roots:
+
+```java
+${climbTheTree}
+```
+
+![Climb The Tree](${climbTheTree.graph.dot.svg})
+

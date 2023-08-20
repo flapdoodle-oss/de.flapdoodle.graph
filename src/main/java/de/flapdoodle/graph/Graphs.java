@@ -68,15 +68,15 @@ public class Graphs {
 		return ret;
 	}
 	
-	public static <V,E> Collection<VerticesAndEdges<V, E>> leavesOf(DefaultDirectedGraph<V, E> src) {
+	public static <V,E> List<VerticesAndEdges<V, E>> leavesOf(DefaultDirectedGraph<V, E> src) {
 		return leavesOrRootsOf(src, true);
 	}
 	
-	public static <V,E> Collection<VerticesAndEdges<V, E>> rootsOf(DefaultDirectedGraph<V, E> src) {
+	public static <V,E> List<VerticesAndEdges<V, E>> rootsOf(DefaultDirectedGraph<V, E> src) {
 		return leavesOrRootsOf(src, false);
 	}
 	
-	private static <V,E> Collection<VerticesAndEdges<V, E>> leavesOrRootsOf(DefaultDirectedGraph<V, E> src,boolean leafes) {
+	private static <V,E> List<VerticesAndEdges<V, E>> leavesOrRootsOf(DefaultDirectedGraph<V, E> src,boolean leafes) {
 		List<VerticesAndEdges<V,E>> ret=new ArrayList<>();
 
 		Builder<V, E> builder = ImmutableVerticesAndEdges.builder();
@@ -104,7 +104,7 @@ public class Graphs {
 				ret.addAll(leavesOrRootsOf(filteredFromLoops, leafes));
 	        }
 		}
-		return Collections.unmodifiableCollection(ret);
+		return Collections.unmodifiableList(ret);
 	}
 
 	private static <V, E> ImmutableVerticesAndEdges<V, E> verticesAndEdgesOf(List<? extends Loop<V, E>> loops) {

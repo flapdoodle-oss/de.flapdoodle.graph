@@ -1,3 +1,5 @@
+.. moved to [de.flapdoodle.commons](https://github.com/flapdoodle-oss/de.flapdoodle.commons)
+
 # Organisation Flapdoodle OSS
 
 We are a github organisation. You are invited to participate.
